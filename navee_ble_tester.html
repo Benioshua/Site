@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Navee ST3 / Pro BLE Tester</title>
+<style>
+  :root{
+    --bg:#0c1116; --panel:#141c25; --panel2:#1b2735; --line:#26333f;
+    --ink:#e8eef4; --dim:#8aa0b4; --accent:#22d3aa; --accent2:#38bdf8;
+    --warn:#f59e0b; --bad:#ef4444; --good:#22c55e; --tx:#7dd3fc; --rx:#86efac;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 12px);
+    -webkit-text-size-adjust:100%;
+  }
+  header{
+    position:sticky; top:0; z-index:10; margin:0 -12px 12px; padding:12px;
+    background:rgba(12,17,22,.92); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+  header h1{font-size:16px; margin:0; letter-spacing:.2px; flex:1 1 auto}
+  header h1 small{display:block; color:var(--dim); font-weight:500; font-size:11px; letter-spacing:.4px}
+  .dot{width:11px;height:11px;border-radius:50%;background:var(--bad);box-shadow:0 0 0 4px rgba(239,68,68,.15);flex:0 0 auto}
+  .dot.on{background:var(--good);box-shadow:0 0 0 4px rgba(34,197,94,.18)}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:12px}
+  .card h2{font-size:12px; text-transform:uppercase; letter-spacing:.8px; color:var(--dim); margin:0 0 10px}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:8px}
+  .grid.two{grid-template-columns:1fr 1fr}
+  button{
+    font:600 14px/1 inherit; color:var(--ink); background:var(--panel2);
+    border:1px solid var(--line); border-radius:11px; padding:13px 10px; min-height:46px;
+    -webkit-tap-highlight-color:transparent; touch-action:manipulation; cursor:pointer;
+    transition:transform .05s ease, background .15s ease, border-color .15s ease;
+  }
+  button:active{transform:scale(.97)}
+  button:disabled{opacity:.4}
+  button.primary{background:linear-gradient(180deg,#1ec9a3,#12a888); border-color:#12a888; color:#062018}
+  button.accent{border-color:var(--accent); color:var(--accent)}
+  button.on{background:#16362c; border-color:var(--good); color:#c7f9e5}
+  button.off{background:#361a1a; border-color:#7f1d1d; color:#fecaca}
+  button.wide{grid-column:1/-1}
+  .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .row>button{flex:1 1 auto}
+  label{font-size:12px; color:var(--dim); display:block; margin:2px 0 5px}
+  input,select{
+    font:15px inherit; color:var(--ink); background:#0e151c; border:1px solid var(--line);
+    border-radius:10px; padding:11px 10px; width:100%; -webkit-appearance:none;
+  }
+  input[type=number]{font-variant-numeric:tabular-nums}
+  .field{flex:1 1 90px}
+  .hint{font-size:11px; color:var(--dim); margin-top:6px}
+  .badge{font-size:11px; padding:3px 8px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); color:var(--dim)}
+  .badge.ok{color:var(--good); border-color:#1f5137}
+  .badge.warn{color:var(--warn); border-color:#5b430f}
+  #log{
+    background:#080c11; border:1px solid var(--line); border-radius:10px; padding:10px;
+    height:40vh; min-height:220px; overflow:auto; font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+    white-space:pre-wrap; word-break:break-word;
+  }
+  .le{padding:2px 0; border-bottom:1px solid #10171e}
+  .le .t{color:#4b6072}
+  .le.tx .m{color:var(--tx)} .le.rx .m{color:var(--rx)}
+  .le.err .m{color:#fca5a5} .le.info .m{color:var(--dim)} .le.ok .m{color:var(--good)}
+  .le .d{color:#cdd9e5}
+  details summary{cursor:pointer; color:var(--dim); font-size:12px; margin-top:6px}
+  .foot{color:var(--dim); font-size:11px; text-align:center; margin:6px 0 2px}
+  .sp{height:2px}
+</style>
+</head>
+<body>
+<header>
+  <span class="dot" id="dot"></span>
+  <h1>Navee ST3 / Pro BLE Tester<small id="devname">not connected</small></h1>
+  <span class="badge" id="authbadge">no auth</span>
+</header>
+
+<div class="card">
+  <div class="row">
+    <button class="primary" id="btnConnect" style="flex:2 1 60%">Connect</button>
+    <button id="btnConnectAll">Scan all</button>
+    <button id="btnDisc">Disconnect</button>
+  </div>
+  <div class="hint" id="svcinfo">Pick your scooter (name usually starts Navee / NV / ST3). "Scan all" lists every device if the name doesn't match.</div>
+</div>
+
+<div class="card">
+  <h2>Authenticate</h2>
+  <div class="row">
+    <div class="field" style="flex:0 0 92px">
+      <label>Key index</label>
+      <select id="keyIdx">
+        <option value="0">0</option>
+        <option value="1" selected>1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Device ID (6 bytes hex)</label>
+      <input id="devid" value="88 00 00 00 00 00" spellcheck="false" autocapitalize="off">
+    </div>
+  </div>
+  <div class="sp"></div>
+  <button class="accent wide" id="btnAuth" disabled>Authenticate (0x30 → challenge → 0x31)</button>
+  <div class="hint">The app chooses the key index — any 0–4 works, the scooter follows. If auth seems ignored, try another index. Device ID rarely matters for the challenge; the default is fine.</div>
+</div>
+
+<div class="card">
+  <h2>Read / Info</h2>
+  <div class="grid">
+    <button data-cmd="70">Status</button>
+    <button data-cmd="72">Battery</button>
+    <button data-cmd="73">Firmware</button>
+    <button data-cmd="74">Serial</button>
+    <button data-cmd="76">Drive Hist</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Speed Mode <span class="badge">0x58</span></h2>
+  <div class="grid two">
+    <button data-cmd="58" data-data="03">ECO</button>
+    <button data-cmd="58" data-data="05">SPORT</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Toggles</h2>
+  <div class="grid two">
+    <button data-cmd="51" data-data="01">Lock ON</button>
+    <button data-cmd="51" data-data="00">Lock OFF</button>
+    <button data-cmd="52" data-data="01">Cruise ON</button>
+    <button data-cmd="52" data-data="00">Cruise OFF</button>
+    <button data-cmd="54" data-data="01">Taillight ON</button>
+    <button data-cmd="54" data-data="00">Taillight OFF</button>
+    <button data-cmd="57" data-data="01">Auto Headlight ON</button>
+    <button data-cmd="57" data-data="00">Auto Headlight OFF</button>
+    <button data-cmd="60" data-data="01">Turn Sound ON</button>
+    <button data-cmd="60" data-data="00">Turn Sound OFF</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>ERS / Recuperation <span class="badge">0x53</span></h2>
+  <div class="grid">
+    <button data-cmd="53" data-data="00">Off (0)</button>
+    <button data-cmd="53" data-data="01">Low (1)</button>
+    <button data-cmd="53" data-data="02">High (2)</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Startup / Zero-Start <span class="badge">0x6A</span></h2>
+  <div class="grid">
+    <button data-cmd="6a" data-data="00">Level 0</button>
+    <button data-cmd="6a" data-data="01">Level 1</button>
+    <button data-cmd="6a" data-data="02">Level 2</button>
+    <button data-cmd="6a" data-data="03">Level 3</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Max Speed <span class="badge">0x6E</span></h2>
+  <div class="row">
+    <div class="field"><input id="maxkmh" type="number" min="1" max="60" value="25"></div>
+    <button class="accent" id="btnMax" style="flex:0 0 40%">Set km/h</button>
+  </div>
+  <div class="hint">Sends 6E [01, km/h]. Values above the legal limit are for private-land / bench testing only.</div>
+</div>
+
+<div class="card">
+  <h2>Custom Speed Limit <span class="badge">0x6B</span></h2>
+  <div class="row">
+    <div class="field"><input id="limkmh" type="number" min="1" max="60" value="20"></div>
+    <button class="accent" id="btnLimOn" style="flex:0 0 28%">Enable</button>
+    <button id="btnLimOff" style="flex:0 0 28%">Disable</button>
+  </div>
+  <div class="hint">Enable sends 6B [0x80 | km/h]; Disable sends 6B [0x00].</div>
+</div>
+
+<div class="card">
+  <h2>Custom Frame</h2>
+  <div class="row">
+    <div class="field" style="flex:0 0 84px"><label>cmd</label><input id="ccmd" value="70" spellcheck="false" autocapitalize="off"></div>
+    <div class="field"><label>data (hex, optional)</label><input id="cdata" placeholder="e.g. 01" spellcheck="false" autocapitalize="off"></div>
+  </div>
+  <div class="sp"></div>
+  <button class="wide" id="btnCustom">Send custom</button>
+  <div class="hint">Frame = 55 AA 00 &lt;cmd&gt; [len data] &lt;csum&gt; FE FD (checksum &amp; footer added for you).</div>
+</div>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between">
+    <h2 style="margin:0">Log</h2>
+    <div class="row" style="flex:0 0 auto">
+      <button id="btnCopy" style="min-height:34px;padding:7px 12px">Copy</button>
+      <button id="btnClear" style="min-height:34px;padding:7px 12px">Clear</button>
+    </div>
+  </div>
+  <div class="sp"></div>
+  <div id="log"></div>
+</div>
+
+<div class="foot">Reverse-engineered client for your own Navee ST3 / ST3 Pro. XOR challenge-response auth · frame 55AA…FEFD.</div>
+
+<script>
+"use strict";
+
+// ---- Reverse-engineered AES/XOR key table (from BLE firmware @0x21738) ----
+const KEYS = [
+  "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+  "446d10726dbe05f662dfaaf01327303f",
+  "a285ccec814fe961742995e8eba92247",
+  "3fee80ff96df5cf542eaac93281fe529", // corrected (pepperonas had 9a→96)
+  "4eb4d464d6ef53ed6ce94558de9a5ee3",
+].map(hexToBytes);
+
+// Candidate GATT UUIDs (Navee Telink + Realtek variants). Discovery auto-picks.
+const SERVICES = [
+  "0000d0ff-3c17-d293-8e48-14fe2e4da212",
+  "0000b003-0000-1000-8000-00805f9b34fb",
+  "0000fff0-0000-1000-8000-00805f9b34fb",
+  "0000ffe0-0000-1000-8000-00805f9b34fb",
+  "0000fee7-0000-1000-8000-00805f9b34fb",
+  "0000fd00-0000-1000-8000-00805f9b34fb",
+  "generic_access","device_information","battery_service",
+];
+
+let device=null, server=null, writeChar=null, notifyChar=null;
+let authPending=null, authed=false;
+let rxBuf=[];
+let writeChain=Promise.resolve();
+
+// ---------- helpers ----------
+function hexToBytes(s){
+  s=(s||"").replace(/[^0-9a-fA-F]/g,"");
+  if(s.length%2) s="0"+s;
+  const a=[]; for(let i=0;i<s.length;i+=2) a.push(parseInt(s.substr(i,2),16));
+  return a;
+}
+function toHex(a){return Array.from(a,b=>b.toString(16).padStart(2,"0")).join("")}
+function toHexSp(a){return Array.from(a,b=>b.toString(16).padStart(2,"0")).join(" ")}
+
+function buildFrame(cmd, data=[]){
+  data=Array.from(data);
+  let body = data.length===0 ? [0x00,cmd] : [0x00,cmd,data.length,...data];
+  const wh=[0x55,0xAA,...body];
+  let sum=0; for(const b of wh) sum=(sum+b)&0xFF;
+  return new Uint8Array([...wh,sum,0xFE,0xFD]);
+}
+
+function parseFrame(bytes){
+  if(bytes.length<6) return null;
+  if(bytes[0]!==0x55||bytes[1]!==0xAA) return null;
+  if(bytes[bytes.length-2]!==0xFE||bytes[bytes.length-1]!==0xFD) return null;
+  const body=bytes.slice(2,bytes.length-2); // includes checksum, per app
+  const cmd=body[1];
+  let data=[];
+  if(body.length>3){ const len=body[2]; data=body.slice(3,3+len); }
+  return {cmd,data,raw:bytes};
+}
+
+// ---------- logging ----------
+const logEl=document.getElementById("log");
+function log(kind,msg,detail){
+  const t=new Date().toLocaleTimeString();
+  const div=document.createElement("div");
+  div.className="le "+kind;
+  div.innerHTML=`<span class="t">${t}</span> <span class="m">${msg}</span>`+(detail?` <span class="d">${detail}</span>`:"");
+  logEl.appendChild(div);
+  while(logEl.childElementCount>400) logEl.removeChild(logEl.firstChild);
+  logEl.scrollTop=logEl.scrollHeight;
+}
+
+// ---------- UI state ----------
+const dot=document.getElementById("dot");
+const devname=document.getElementById("devname");
+const authbadge=document.getElementById("authbadge");
+function setConnected(on){
+  dot.classList.toggle("on",on);
+  document.querySelectorAll("button[data-cmd],#btnAuth,#btnMax,#btnLimOn,#btnLimOff,#btnCustom")
+    .forEach(b=>b.disabled=!on);
+  if(!on){ devname.textContent="not connected"; setAuth(false); }
+}
+function setAuth(ok){
+  authed=ok;
+  authbadge.textContent=ok?"authenticated":"no auth";
+  authbadge.className="badge "+(ok?"ok":"");
+}
+
+// ---------- connect ----------
+async function connect(all){
+  if(!navigator.bluetooth){ log("err","Web Bluetooth not available","Open this file in Bluefy (iOS) or Chrome (Android/desktop)."); return; }
+  try{
+    log("info","requesting device…");
+    const opts = all
+      ? {acceptAllDevices:true, optionalServices:SERVICES}
+      : {filters:[{namePrefix:"Navee"},{namePrefix:"NV"},{namePrefix:"ST3"},{namePrefix:"NKS"}], optionalServices:SERVICES};
+    device=await navigator.bluetooth.requestDevice(opts);
+    devname.textContent=device.name||device.id||"device";
+    device.addEventListener("gattserverdisconnected",()=>{ log("err","disconnected"); setConnected(false); });
+    log("info","connecting GATT…");
+    server=await device.gatt.connect();
+    await discover();
+    setConnected(true);
+    log("ok","connected — ready. Authenticate, then fire commands.");
+  }catch(e){ log("err","connect failed",e.message||String(e)); }
+}
+
+async function discover(){
+  writeChar=null; notifyChar=null;
+  const svcs=await server.getPrimaryServices();
+  log("info",`discovered ${svcs.length} service(s)`);
+  let best=null;
+  for(const s of svcs){
+    let chars=[];
+    try{ chars=await s.getCharacteristics(); }catch(e){ continue; }
+    let w=null,n=null,parts=[];
+    for(const c of chars){
+      const p=c.properties, tags=[];
+      if(p.write) tags.push("w"); if(p.writeWithoutResponse) tags.push("wnr");
+      if(p.notify) tags.push("ntf"); if(p.read) tags.push("r"); if(p.indicate) tags.push("ind");
+      parts.push(short(c.uuid)+"["+tags.join(",")+"]");
+      if(!w&&(p.write||p.writeWithoutResponse)) w=c;
+      if(!n&&(p.notify||p.indicate)) n=c;
+    }
+    log("info","svc "+short(s.uuid),parts.join(" "));
+    if(w&&n&&!best) best={s,w,n};
+  }
+  if(!best) throw new Error("no service with writable + notify characteristics found");
+  writeChar=best.w; notifyChar=best.n;
+  document.getElementById("svcinfo").textContent =
+    "service "+short(best.s.uuid)+"  ·  write "+short(best.w.uuid)+"  ·  notify "+short(best.n.uuid);
+  await notifyChar.startNotifications();
+  notifyChar.addEventListener("characteristicvaluechanged",onNotify);
+  log("ok","notifications on "+short(notifyChar.uuid));
+}
+function short(u){ const m=/^0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb$/i.exec(u); return m?("0x"+m[1]):u; }
+
+function disconnect(){ try{ device&&device.gatt.connected&&device.gatt.disconnect(); }catch(e){} setConnected(false); }
+
+// ---------- write ----------
+function writeFrame(frame){
+  writeChain=writeChain.then(async()=>{
+    if(!writeChar){ log("err","not connected"); return; }
+    try{
+      if(writeChar.properties.writeWithoutResponse) await writeChar.writeValueWithoutResponse(frame);
+      else await writeChar.writeValue(frame);
+    }catch(e){
+      try{ await writeChar.writeValue(frame); }
+      catch(e2){ log("err","write failed",e2.message||String(e2)); }
+    }
+  });
+  return writeChain;
+}
+function sendCmd(cmd,data,label){
+  const f=buildFrame(cmd,data);
+  log("tx","TX "+(label||("cmd 0x"+cmd.toString(16))),toHexSp(f));
+  return writeFrame(f);
+}
+
+// ---------- notify / decode ----------
+function onNotify(ev){
+  const dv=ev.target.value;
+  const bytes=[]; for(let i=0;i<dv.byteLength;i++) bytes.push(dv.getUint8(i));
+  // text DFU / non-55AA frames: show as-is
+  const printable = bytes.length && bytes.every(b=>(b>=32&&b<127)||b===13||b===10);
+  if(printable && !(bytes[0]===0x55&&bytes[1]===0xAA)){
+    log("rx","RX text",'"'+String.fromCharCode(...bytes).replace(/\r/g,"\\r").replace(/\n/g,"\\n")+'"');
+    return;
+  }
+  rxBuf.push(...bytes);
+  let guard=0;
+  while(guard++<64){
+    const start=findStart(rxBuf); if(start<0){ rxBuf=[]; break; }
+    if(start>0) rxBuf=rxBuf.slice(start);
+    const end=findEnd(rxBuf); if(end<0) break; // wait for more
+    const frame=rxBuf.slice(0,end+2);
+    rxBuf=rxBuf.slice(end+2);
+    handleFrame(frame);
+  }
+}
+function findStart(a){ for(let i=0;i<a.length-1;i++) if(a[i]===0x55&&a[i+1]===0xAA) return i; return -1; }
+function findEnd(a){ for(let i=2;i<a.length-1;i++) if(a[i]===0xFE&&a[i+1]===0xFD) return i; return -1; }
+
+function handleFrame(bytes){
+  const f=parseFrame(bytes);
+  if(!f){ log("rx","RX raw",toHexSp(bytes)); return; }
+  const dec=decode(f);
+  log("rx","RX 0x"+f.cmd.toString(16).padStart(2,"0")+(dec.name?" "+dec.name:""),
+      (dec.text?dec.text+"  ":"")+"["+toHexSp(f.data)+"]");
+  // auth: scooter's 0x30 challenge → answer with 0x31
+  if(f.cmd===0x30 && authPending){
+    const d=f.data;
+    if(d.length>=16){
+      const challenge=d.slice(d.length-16);
+      const key=KEYS[authPending.keyIdx];
+      const resp=challenge.map((b,i)=>b^key[i]);
+      authPending=null;
+      const f31=buildFrame(0x31,resp);
+      log("tx","TX 0x31 auth response",toHexSp(f31));
+      writeFrame(f31).then(()=>{ setAuth(true); log("ok","auth handshake complete — try a Status read"); });
+    }else{
+      log("err","0x30 response too short for challenge",toHexSp(d));
+    }
+  }
+}
+
+function ascii(a){ let s=""; for(const b of a){ if(b===0) break; s+= (b>=32&&b<127)?String.fromCharCode(b):"."; } return s; }
+function decode(f){
+  const d=f.data;
+  switch(f.cmd){
+    case 0x74: return {name:"SERIAL", text:"serial="+ascii(d.slice(1))};
+    case 0x73: return {name:"FIRMWARE", text:"ver~"+ascii(d.slice(1))};
+    case 0x72: return {name:"BATTERY"};
+    case 0x70: return d.length>13?{name:"STATUS",
+      text:`mode=${d[2]===5?"SPORT":d[2]===3?"ECO":d[2]} lock=${d[3]} cruise=${d[4]} tail=${d[5]} ers=${d[6]} autoHL=${d[9]} tcs=${d[12]} turnSnd=${d[13]}`+(d.length>26?` maxSpd=${d[26]}`:"")}
+      :{name:"STATUS"};
+    case 0x90: return d.length>7?{name:"TELEM-HOME",
+      text:`batt=${d[3]}% range=${d[7]}km`+(d.length>12?` v=${(d[9]|d[10]<<8|d[11]<<16|d[12]<<24)}mV`:"")}
+      :{name:"TELEM-HOME"};
+    case 0x92: return d.length>4?{name:"TELEM-DRIVE", text:`batt=${d[1]}% speed=${((d[3]|d[4]<<8)/10).toFixed(1)}km/h`}:{name:"TELEM-DRIVE"};
+    case 0x30: return {name:"AUTH-challenge"};
+    case 0x31: return {name:"AUTH-key"};
+    default: return {name:""};
+  }
+}
+
+// ---------- wire up buttons ----------
+document.getElementById("btnConnect").onclick=()=>connect(false);
+document.getElementById("btnConnectAll").onclick=()=>connect(true);
+document.getElementById("btnDisc").onclick=disconnect;
+document.getElementById("btnClear").onclick=()=>logEl.innerHTML="";
+document.getElementById("btnCopy").onclick=async()=>{
+  try{ await navigator.clipboard.writeText(logEl.innerText); log("info","log copied"); }
+  catch(e){ log("err","copy failed",e.message||""); }
+};
+
+document.getElementById("btnAuth").onclick=()=>{
+  const keyIdx=parseInt(document.getElementById("keyIdx").value,10);
+  let id=hexToBytes(document.getElementById("devid").value);
+  while(id.length<6) id.push(0); id=id.slice(0,6);
+  authPending={keyIdx};
+  const req=buildFrame(0x30,[keyIdx,0x00,...id,0x00]);
+  setAuth(false);
+  log("tx",`TX 0x30 auth request (key ${keyIdx})`,toHexSp(req));
+  writeFrame(req);
+  setTimeout(()=>{ if(authPending){ log("err","no 0x30 challenge received — try another key index / press Authenticate again"); authPending=null; } },2500);
+};
+
+document.querySelectorAll("button[data-cmd]").forEach(b=>{
+  b.onclick=()=>{
+    const cmd=parseInt(b.dataset.cmd,16);
+    const data=b.dataset.data?hexToBytes(b.dataset.data):[];
+    sendCmd(cmd,data,b.textContent.trim());
+  };
+});
+document.getElementById("btnMax").onclick=()=>{
+  const k=Math.max(1,Math.min(255,parseInt(document.getElementById("maxkmh").value||"0",10)));
+  sendCmd(0x6e,[0x01,k],"Max speed "+k+"km/h");
+};
+document.getElementById("btnLimOn").onclick=()=>{
+  const k=Math.max(1,Math.min(127,parseInt(document.getElementById("limkmh").value||"0",10)));
+  sendCmd(0x6b,[0x80|(k&0x7f)],"Speed limit ON "+k+"km/h");
+};
+document.getElementById("btnLimOff").onclick=()=>sendCmd(0x6b,[0x00],"Speed limit OFF");
+document.getElementById("btnCustom").onclick=()=>{
+  const cmd=hexToBytes(document.getElementById("ccmd").value)[0];
+  if(cmd==null){ log("err","enter a cmd byte"); return; }
+  const data=hexToBytes(document.getElementById("cdata").value);
+  sendCmd(cmd,data,"custom");
+};
+
+setConnected(false);
+log("info","ready. Tap Connect and choose your scooter.");
+if(!navigator.bluetooth) log("err","This browser has no Web Bluetooth.","Use Bluefy on iOS, or Chrome on Android/desktop.");
+</script>
+</body>
+</html>
