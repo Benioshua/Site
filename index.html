@@ -2,486 +2,555 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Navee ST3 / Pro BLE Tester</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Navee BLE Flash/Recon</title>
 <style>
-  :root{
-    --bg:#0c1116; --panel:#141c25; --panel2:#1b2735; --line:#26333f;
-    --ink:#e8eef4; --dim:#8aa0b4; --accent:#22d3aa; --accent2:#38bdf8;
-    --warn:#f59e0b; --bad:#ef4444; --good:#22c55e; --tx:#7dd3fc; --rx:#86efac;
-    --radius:14px;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0}
-  body{
-    background:var(--bg); color:var(--ink);
-    font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    padding:env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 12px);
-    -webkit-text-size-adjust:100%;
-  }
-  header{
-    position:sticky; top:0; z-index:10; margin:0 -12px 12px; padding:12px;
-    background:rgba(12,17,22,.92); backdrop-filter:blur(8px);
-    border-bottom:1px solid var(--line);
-    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-  }
-  header h1{font-size:16px; margin:0; letter-spacing:.2px; flex:1 1 auto}
-  header h1 small{display:block; color:var(--dim); font-weight:500; font-size:11px; letter-spacing:.4px}
-  .dot{width:11px;height:11px;border-radius:50%;background:var(--bad);box-shadow:0 0 0 4px rgba(239,68,68,.15);flex:0 0 auto}
-  .dot.on{background:var(--good);box-shadow:0 0 0 4px rgba(34,197,94,.18)}
-  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:12px}
-  .card h2{font-size:12px; text-transform:uppercase; letter-spacing:.8px; color:var(--dim); margin:0 0 10px}
-  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:8px}
-  .grid.two{grid-template-columns:1fr 1fr}
-  button{
-    font:600 14px/1 inherit; color:var(--ink); background:var(--panel2);
-    border:1px solid var(--line); border-radius:11px; padding:13px 10px; min-height:46px;
-    -webkit-tap-highlight-color:transparent; touch-action:manipulation; cursor:pointer;
-    transition:transform .05s ease, background .15s ease, border-color .15s ease;
-  }
-  button:active{transform:scale(.97)}
-  button:disabled{opacity:.4}
-  button.primary{background:linear-gradient(180deg,#1ec9a3,#12a888); border-color:#12a888; color:#062018}
-  button.accent{border-color:var(--accent); color:var(--accent)}
-  button.on{background:#16362c; border-color:var(--good); color:#c7f9e5}
-  button.off{background:#361a1a; border-color:#7f1d1d; color:#fecaca}
-  button.wide{grid-column:1/-1}
-  .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-  .row>button{flex:1 1 auto}
-  label{font-size:12px; color:var(--dim); display:block; margin:2px 0 5px}
-  input,select{
-    font:15px inherit; color:var(--ink); background:#0e151c; border:1px solid var(--line);
-    border-radius:10px; padding:11px 10px; width:100%; -webkit-appearance:none;
-  }
-  input[type=number]{font-variant-numeric:tabular-nums}
-  .field{flex:1 1 90px}
-  .hint{font-size:11px; color:var(--dim); margin-top:6px}
-  .badge{font-size:11px; padding:3px 8px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); color:var(--dim)}
-  .badge.ok{color:var(--good); border-color:#1f5137}
-  .badge.warn{color:var(--warn); border-color:#5b430f}
-  #log{
-    background:#080c11; border:1px solid var(--line); border-radius:10px; padding:10px;
-    height:40vh; min-height:220px; overflow:auto; font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
-    white-space:pre-wrap; word-break:break-word;
-  }
-  .le{padding:2px 0; border-bottom:1px solid #10171e}
-  .le .t{color:#4b6072}
-  .le.tx .m{color:var(--tx)} .le.rx .m{color:var(--rx)}
-  .le.err .m{color:#fca5a5} .le.info .m{color:var(--dim)} .le.ok .m{color:var(--good)}
-  .le .d{color:#cdd9e5}
-  details summary{cursor:pointer; color:var(--dim); font-size:12px; margin-top:6px}
-  .foot{color:var(--dim); font-size:11px; text-align:center; margin:6px 0 2px}
-  .sp{height:2px}
+  :root { color-scheme: dark; }
+  body { background:#111; color:#ddd; font-family:-apple-system,Helvetica,Arial,sans-serif; margin:0; padding:16px; }
+  h1 { font-size:18px; margin:0 0 4px; }
+  .sub { color:#888; font-size:12px; margin-bottom:16px; }
+  fieldset { border:1px solid #333; border-radius:8px; margin-bottom:12px; padding:10px 12px; }
+  legend { color:#9ad; font-size:12px; padding:0 6px; }
+  label { display:block; font-size:13px; margin:6px 0; }
+  input[type=text], input[type=number], select { background:#1b1b1b; color:#eee; border:1px solid #333; border-radius:6px; padding:6px 8px; width:100%; box-sizing:border-box; font-size:14px; }
+  input[type=file] { font-size:13px; }
+  button { background:#2a63c9; color:#fff; border:none; border-radius:6px; padding:10px 14px; font-size:14px; margin-right:8px; margin-top:4px; }
+  button:disabled { background:#334; color:#889; }
+  #log { background:#000; color:#8f8; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; white-space:pre-wrap; word-break:break-all; height:44vh; overflow-y:auto; border-radius:8px; padding:10px; border:1px solid #333; }
+  .warn { color:#f66; font-weight:bold; }
 </style>
 </head>
 <body>
-<header>
-  <span class="dot" id="dot"></span>
-  <h1>Navee ST3 / Pro BLE Tester<small id="devname">not connected</small></h1>
-  <span class="badge" id="authbadge">no auth</span>
-</header>
+<h1>Navee BLE Flash / Recon</h1>
+<div class="sub">Real Web Bluetooth central — run this in <b>Bluefy</b> on iOS (Safari/Chrome-iOS have no Web Bluetooth at all), or any Chromium browser elsewhere. Host over HTTPS (GitHub Pages works).</div>
 
-<div class="card">
-  <div class="row">
-    <button class="primary" id="btnConnect" style="flex:2 1 60%">Connect</button>
-    <button id="btnConnectAll">Scan all</button>
-    <button id="btnDisc">Disconnect</button>
-  </div>
-  <div class="hint" id="svcinfo">Pick your scooter (name usually starts Navee / NV / ST3). "Scan all" lists every device if the name doesn't match.</div>
-</div>
+<fieldset>
+  <legend>1. Connect</legend>
+  <label>Device name prefix (leave blank to list ALL nearby BLE devices)
+    <input type="text" id="nameHint" placeholder="e.g. Navee">
+  </label>
+  <button id="connectBtn">Connect</button>
+  <span id="connStatus"></span>
+</fieldset>
 
-<div class="card">
-  <h2>Authenticate</h2>
-  <div class="row">
-    <div class="field" style="flex:0 0 92px">
-      <label>Key index</label>
-      <select id="keyIdx">
-        <option value="0">0</option>
-        <option value="1" selected>1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Device ID (6 bytes hex)</label>
-      <input id="devid" value="88 00 00 00 00 00" spellcheck="false" autocapitalize="off">
-    </div>
-  </div>
-  <div class="sp"></div>
-  <button class="accent wide" id="btnAuth" disabled>Authenticate (0x30 → challenge → 0x31)</button>
-  <div class="hint">The app chooses the key index — any 0–4 works, the scooter follows. If auth seems ignored, try another index. Device ID rarely matters for the challenge; the default is fine.</div>
-</div>
+<fieldset>
+  <legend>2. Stage — run "auth" clean before ever using "flash"</legend>
+  <label>Stage
+    <select id="stage">
+      <option value="auth">auth (read-only: challenge-response + status/serial/firmware reads)</option>
+      <option value="flash">flash (WRITES firmware to real flash)</option>
+    </select>
+  </label>
+  <label>Auth/DFU key index (0-4, from the firmware's own key table)
+    <input type="number" id="keyIndex" value="1" min="0" max="4">
+  </label>
+  <label>DFU target sub-MCU (flash stage only)
+    <select id="dfuTarget">
+      <option value="1">1 = meter</option>
+      <option value="2" selected>2 = bldc</option>
+      <option value="3">3 = bms</option>
+      <option value="4">4 = screen</option>
+    </select>
+  </label>
+  <label>Firmware .bin (flash stage only)
+    <input type="file" id="fwFile">
+  </label>
+  <button id="runBtn" disabled>Run</button>
+</fieldset>
 
-<div class="card">
-  <h2>Read / Info</h2>
-  <div class="grid">
-    <button data-cmd="70">Status</button>
-    <button data-cmd="72">Battery</button>
-    <button data-cmd="73">Firmware</button>
-    <button data-cmd="74">Serial</button>
-    <button data-cmd="76">Drive Hist</button>
-  </div>
-</div>
-
-<div class="card">
-  <h2>Speed Mode <span class="badge">0x58</span></h2>
-  <div class="grid two">
-    <button data-cmd="58" data-data="03">ECO</button>
-    <button data-cmd="58" data-data="05">SPORT</button>
-  </div>
-</div>
-
-<div class="card">
-  <h2>Toggles</h2>
-  <div class="grid two">
-    <button data-cmd="51" data-data="01">Lock ON</button>
-    <button data-cmd="51" data-data="00">Lock OFF</button>
-    <button data-cmd="52" data-data="01">Cruise ON</button>
-    <button data-cmd="52" data-data="00">Cruise OFF</button>
-    <button data-cmd="54" data-data="01">Taillight ON</button>
-    <button data-cmd="54" data-data="00">Taillight OFF</button>
-    <button data-cmd="57" data-data="01">Auto Headlight ON</button>
-    <button data-cmd="57" data-data="00">Auto Headlight OFF</button>
-    <button data-cmd="60" data-data="01">Turn Sound ON</button>
-    <button data-cmd="60" data-data="00">Turn Sound OFF</button>
-  </div>
-</div>
-
-<div class="card">
-  <h2>ERS / Recuperation <span class="badge">0x53</span></h2>
-  <div class="grid">
-    <button data-cmd="53" data-data="00">Off (0)</button>
-    <button data-cmd="53" data-data="01">Low (1)</button>
-    <button data-cmd="53" data-data="02">High (2)</button>
-  </div>
-</div>
-
-<div class="card">
-  <h2>Startup / Zero-Start <span class="badge">0x6A</span></h2>
-  <div class="grid">
-    <button data-cmd="6a" data-data="00">Level 0</button>
-    <button data-cmd="6a" data-data="01">Level 1</button>
-    <button data-cmd="6a" data-data="02">Level 2</button>
-    <button data-cmd="6a" data-data="03">Level 3</button>
-  </div>
-</div>
-
-<div class="card">
-  <h2>Max Speed <span class="badge">0x6E</span></h2>
-  <div class="row">
-    <div class="field"><input id="maxkmh" type="number" min="1" max="60" value="25"></div>
-    <button class="accent" id="btnMax" style="flex:0 0 40%">Set km/h</button>
-  </div>
-  <div class="hint">Sends 6E [01, km/h]. Values above the legal limit are for private-land / bench testing only.</div>
-</div>
-
-<div class="card">
-  <h2>Custom Speed Limit <span class="badge">0x6B</span></h2>
-  <div class="row">
-    <div class="field"><input id="limkmh" type="number" min="1" max="60" value="20"></div>
-    <button class="accent" id="btnLimOn" style="flex:0 0 28%">Enable</button>
-    <button id="btnLimOff" style="flex:0 0 28%">Disable</button>
-  </div>
-  <div class="hint">Enable sends 6B [0x80 | km/h]; Disable sends 6B [0x00].</div>
-</div>
-
-<div class="card">
-  <h2>Custom Frame</h2>
-  <div class="row">
-    <div class="field" style="flex:0 0 84px"><label>cmd</label><input id="ccmd" value="70" spellcheck="false" autocapitalize="off"></div>
-    <div class="field"><label>data (hex, optional)</label><input id="cdata" placeholder="e.g. 01" spellcheck="false" autocapitalize="off"></div>
-  </div>
-  <div class="sp"></div>
-  <button class="wide" id="btnCustom">Send custom</button>
-  <div class="hint">Frame = 55 AA 00 &lt;cmd&gt; [len data] &lt;csum&gt; FE FD (checksum &amp; footer added for you).</div>
-</div>
-
-<div class="card">
-  <div class="row" style="justify-content:space-between">
-    <h2 style="margin:0">Log</h2>
-    <div class="row" style="flex:0 0 auto">
-      <button id="btnCopy" style="min-height:34px;padding:7px 12px">Copy</button>
-      <button id="btnClear" style="min-height:34px;padding:7px 12px">Clear</button>
-    </div>
-  </div>
-  <div class="sp"></div>
-  <div id="log"></div>
-</div>
-
-<div class="foot">Reverse-engineered client for your own Navee ST3 / ST3 Pro. XOR challenge-response auth · frame 55AA…FEFD.</div>
+<div id="log"></div>
 
 <script>
-"use strict";
+'use strict';
 
-// ---- Reverse-engineered AES/XOR key table (from BLE firmware @0x21738) ----
-const KEYS = [
+// ─────────────────────────── Protocol constants ───────────────────────────
+const SERVICE_UUID = "0000d0ff-3c17-d293-8e48-14fe2e4da212";
+
+const AES_KEYS = [
   "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
   "446d10726dbe05f662dfaaf01327303f",
   "a285ccec814fe961742995e8eba92247",
-  "3fee80ff96df5cf542eaac93281fe529", // corrected (pepperonas had 9a→96)
+  "3fee80ff96df5cf542eaac93281fe529",
   "4eb4d464d6ef53ed6ce94558de9a5ee3",
 ].map(hexToBytes);
 
-// Candidate GATT UUIDs (Navee Telink + Realtek variants). Discovery auto-picks.
-const SERVICES = [
-  "0000d0ff-3c17-d293-8e48-14fe2e4da212",
-  "0000b003-0000-1000-8000-00805f9b34fb",
-  "0000fff0-0000-1000-8000-00805f9b34fb",
-  "0000ffe0-0000-1000-8000-00805f9b34fb",
-  "0000fee7-0000-1000-8000-00805f9b34fb",
-  "0000fd00-0000-1000-8000-00805f9b34fb",
-  "generic_access","device_information","battery_service",
-];
+const DFU_MCU_NAMES = {1:"meter", 2:"bldc", 3:"bms", 4:"screen"};
 
-let device=null, server=null, writeChar=null, notifyChar=null;
-let authPending=null, authed=false;
-let rxBuf=[];
-let writeChain=Promise.resolve();
-
-// ---------- helpers ----------
-function hexToBytes(s){
-  s=(s||"").replace(/[^0-9a-fA-F]/g,"");
-  if(s.length%2) s="0"+s;
-  const a=[]; for(let i=0;i<s.length;i+=2) a.push(parseInt(s.substr(i,2),16));
-  return a;
+function hexToBytes(hex) {
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return out;
 }
-function toHex(a){return Array.from(a,b=>b.toString(16).padStart(2,"0")).join("")}
-function toHexSp(a){return Array.from(a,b=>b.toString(16).padStart(2,"0")).join(" ")}
-
-function buildFrame(cmd, data=[]){
-  data=Array.from(data);
-  let body = data.length===0 ? [0x00,cmd] : [0x00,cmd,data.length,...data];
-  const wh=[0x55,0xAA,...body];
-  let sum=0; for(const b of wh) sum=(sum+b)&0xFF;
-  return new Uint8Array([...wh,sum,0xFE,0xFD]);
+function bytesToHex(bytes) {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+function strToBytes(s) { return new TextEncoder().encode(s); }
+function bytesStartWith(a, prefix) {
+  if (!a || a.length < prefix.length) return false;
+  for (let i = 0; i < prefix.length; i++) if (a[i] !== prefix[i]) return false;
+  return true;
+}
+function concatBytes(...arrs) {
+  const total = arrs.reduce((n, a) => n + a.length, 0);
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const a of arrs) { out.set(a, off); off += a.length; }
+  return out;
 }
 
-function parseFrame(bytes){
-  if(bytes.length<6) return null;
-  if(bytes[0]!==0x55||bytes[1]!==0xAA) return null;
-  if(bytes[bytes.length-2]!==0xFE||bytes[bytes.length-1]!==0xFD) return null;
-  const body=bytes.slice(2,bytes.length-2); // includes checksum, per app
-  const cmd=body[1];
-  let data=[];
-  if(body.length>3){ const len=body[2]; data=body.slice(3,3+len); }
-  return {cmd,data,raw:bytes};
-}
+// ───────────────────────── Pure-JS AES-128 (ECB) ───────────────────────────
+// Web Crypto's SubtleCrypto deliberately does not implement ECB mode, so this
+// is a from-scratch textbook AES-128 single-block implementation — only ever
+// used on the one 16-byte DFU ble_rand/ble_key handshake block.
 
-// ---------- logging ----------
-const logEl=document.getElementById("log");
-function log(kind,msg,detail){
-  const t=new Date().toLocaleTimeString();
-  const div=document.createElement("div");
-  div.className="le "+kind;
-  div.innerHTML=`<span class="t">${t}</span> <span class="m">${msg}</span>`+(detail?` <span class="d">${detail}</span>`:"");
-  logEl.appendChild(div);
-  while(logEl.childElementCount>400) logEl.removeChild(logEl.firstChild);
-  logEl.scrollTop=logEl.scrollHeight;
-}
+const SBOX = new Uint8Array([
+  0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
+  0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
+  0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
+  0x04,0xc7,0x23,0xc3,0x18,0x96,0x05,0x9a,0x07,0x12,0x80,0xe2,0xeb,0x27,0xb2,0x75,
+  0x09,0x83,0x2c,0x1a,0x1b,0x6e,0x5a,0xa0,0x52,0x3b,0xd6,0xb3,0x29,0xe3,0x2f,0x84,
+  0x53,0xd1,0x00,0xed,0x20,0xfc,0xb1,0x5b,0x6a,0xcb,0xbe,0x39,0x4a,0x4c,0x58,0xcf,
+  0xd0,0xef,0xaa,0xfb,0x43,0x4d,0x33,0x85,0x45,0xf9,0x02,0x7f,0x50,0x3c,0x9f,0xa8,
+  0x51,0xa3,0x40,0x8f,0x92,0x9d,0x38,0xf5,0xbc,0xb6,0xda,0x21,0x10,0xff,0xf3,0xd2,
+  0xcd,0x0c,0x13,0xec,0x5f,0x97,0x44,0x17,0xc4,0xa7,0x7e,0x3d,0x64,0x5d,0x19,0x73,
+  0x60,0x81,0x4f,0xdc,0x22,0x2a,0x90,0x88,0x46,0xee,0xb8,0x14,0xde,0x5e,0x0b,0xdb,
+  0xe0,0x32,0x3a,0x0a,0x49,0x06,0x24,0x5c,0xc2,0xd3,0xac,0x62,0x91,0x95,0xe4,0x79,
+  0xe7,0xc8,0x37,0x6d,0x8d,0xd5,0x4e,0xa9,0x6c,0x56,0xf4,0xea,0x65,0x7a,0xae,0x08,
+  0xba,0x78,0x25,0x2e,0x1c,0xa6,0xb4,0xc6,0xe8,0xdd,0x74,0x1f,0x4b,0xbd,0x8b,0x8a,
+  0x70,0x3e,0xb5,0x66,0x48,0x03,0xf6,0x0e,0x61,0x35,0x57,0xb9,0x86,0xc1,0x1d,0x9e,
+  0xe1,0xf8,0x98,0x11,0x69,0xd9,0x8e,0x94,0x9b,0x1e,0x87,0xe9,0xce,0x55,0x28,0xdf,
+  0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16,
+]);
 
-// ---------- UI state ----------
-const dot=document.getElementById("dot");
-const devname=document.getElementById("devname");
-const authbadge=document.getElementById("authbadge");
-function setConnected(on){
-  dot.classList.toggle("on",on);
-  document.querySelectorAll("button[data-cmd],#btnAuth,#btnMax,#btnLimOn,#btnLimOff,#btnCustom")
-    .forEach(b=>b.disabled=!on);
-  if(!on){ devname.textContent="not connected"; setAuth(false); }
-}
-function setAuth(ok){
-  authed=ok;
-  authbadge.textContent=ok?"authenticated":"no auth";
-  authbadge.className="badge "+(ok?"ok":"");
-}
+const INV_SBOX = new Uint8Array([
+  0x52,0x09,0x6a,0xd5,0x30,0x36,0xa5,0x38,0xbf,0x40,0xa3,0x9e,0x81,0xf3,0xd7,0xfb,
+  0x7c,0xe3,0x39,0x82,0x9b,0x2f,0xff,0x87,0x34,0x8e,0x43,0x44,0xc4,0xde,0xe9,0xcb,
+  0x54,0x7b,0x94,0x32,0xa6,0xc2,0x23,0x3d,0xee,0x4c,0x95,0x0b,0x42,0xfa,0xc3,0x4e,
+  0x08,0x2e,0xa1,0x66,0x28,0xd9,0x24,0xb2,0x76,0x5b,0xa2,0x49,0x6d,0x8b,0xd1,0x25,
+  0x72,0xf8,0xf6,0x64,0x86,0x68,0x98,0x16,0xd4,0xa4,0x5c,0xcc,0x5d,0x65,0xb6,0x92,
+  0x6c,0x70,0x48,0x50,0xfd,0xed,0xb9,0xda,0x5e,0x15,0x46,0x57,0xa7,0x8d,0x9d,0x84,
+  0x90,0xd8,0xab,0x00,0x8c,0xbc,0xd3,0x0a,0xf7,0xe4,0x58,0x05,0xb8,0xb3,0x45,0x06,
+  0xd0,0x2c,0x1e,0x8f,0xca,0x3f,0x0f,0x02,0xc1,0xaf,0xbd,0x03,0x01,0x13,0x8a,0x6b,
+  0x3a,0x91,0x11,0x41,0x4f,0x67,0xdc,0xea,0x97,0xf2,0xcf,0xce,0xf0,0xb4,0xe6,0x73,
+  0x96,0xac,0x74,0x22,0xe7,0xad,0x35,0x85,0xe2,0xf9,0x37,0xe8,0x1c,0x75,0xdf,0x6e,
+  0x47,0xf1,0x1a,0x71,0x1d,0x29,0xc5,0x89,0x6f,0xb7,0x62,0x0e,0xaa,0x18,0xbe,0x1b,
+  0xfc,0x56,0x3e,0x4b,0xc6,0xd2,0x79,0x20,0x9a,0xdb,0xc0,0xfe,0x78,0xcd,0x5a,0xf4,
+  0x1f,0xdd,0xa8,0x33,0x88,0x07,0xc7,0x31,0xb1,0x12,0x10,0x59,0x27,0x80,0xec,0x5f,
+  0x60,0x51,0x7f,0xa9,0x19,0xb5,0x4a,0x0d,0x2d,0xe5,0x7a,0x9f,0x93,0xc9,0x9c,0xef,
+  0xa0,0xe0,0x3b,0x4d,0xae,0x2a,0xf5,0xb0,0xc8,0xeb,0xbb,0x3c,0x83,0x53,0x99,0x61,
+  0x17,0x2b,0x04,0x7e,0xba,0x77,0xd6,0x26,0xe1,0x69,0x14,0x63,0x55,0x21,0x0c,0x7d,
+]);
 
-// ---------- connect ----------
-async function connect(all){
-  if(!navigator.bluetooth){ log("err","Web Bluetooth not available","Open this file in Bluefy (iOS) or Chrome (Android/desktop)."); return; }
-  try{
-    log("info","requesting device…");
-    const opts = all
-      ? {acceptAllDevices:true, optionalServices:SERVICES}
-      : {filters:[{namePrefix:"Navee"},{namePrefix:"NV"},{namePrefix:"ST3"},{namePrefix:"NKS"}], optionalServices:SERVICES};
-    device=await navigator.bluetooth.requestDevice(opts);
-    devname.textContent=device.name||device.id||"device";
-    device.addEventListener("gattserverdisconnected",()=>{ log("err","disconnected"); setConnected(false); });
-    log("info","connecting GATT…");
-    server=await device.gatt.connect();
-    await discover();
-    setConnected(true);
-    log("ok","connected — ready. Authenticate, then fire commands.");
-  }catch(e){ log("err","connect failed",e.message||String(e)); }
-}
+const RCON = [0x00,0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1B,0x36];
 
-async function discover(){
-  writeChar=null; notifyChar=null;
-  const svcs=await server.getPrimaryServices();
-  log("info",`discovered ${svcs.length} service(s)`);
-  let best=null;
-  for(const s of svcs){
-    let chars=[];
-    try{ chars=await s.getCharacteristics(); }catch(e){ continue; }
-    let w=null,n=null,parts=[];
-    for(const c of chars){
-      const p=c.properties, tags=[];
-      if(p.write) tags.push("w"); if(p.writeWithoutResponse) tags.push("wnr");
-      if(p.notify) tags.push("ntf"); if(p.read) tags.push("r"); if(p.indicate) tags.push("ind");
-      parts.push(short(c.uuid)+"["+tags.join(",")+"]");
-      if(!w&&(p.write||p.writeWithoutResponse)) w=c;
-      if(!n&&(p.notify||p.indicate)) n=c;
-    }
-    log("info","svc "+short(s.uuid),parts.join(" "));
-    if(w&&n&&!best) best={s,w,n};
+function gmul(a, b) {
+  let p = 0;
+  for (let i = 0; i < 8; i++) {
+    if (b & 1) p ^= a;
+    const hi = a & 0x80;
+    a = (a << 1) & 0xFF;
+    if (hi) a ^= 0x1B;
+    b >>= 1;
   }
-  if(!best) throw new Error("no service with writable + notify characteristics found");
-  writeChar=best.w; notifyChar=best.n;
-  document.getElementById("svcinfo").textContent =
-    "service "+short(best.s.uuid)+"  ·  write "+short(best.w.uuid)+"  ·  notify "+short(best.n.uuid);
-  await notifyChar.startNotifications();
-  notifyChar.addEventListener("characteristicvaluechanged",onNotify);
-  log("ok","notifications on "+short(notifyChar.uuid));
+  return p;
 }
-function short(u){ const m=/^0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb$/i.exec(u); return m?("0x"+m[1]):u; }
 
-function disconnect(){ try{ device&&device.gatt.connected&&device.gatt.disconnect(); }catch(e){} setConnected(false); }
-
-// ---------- write ----------
-function writeFrame(frame){
-  writeChain=writeChain.then(async()=>{
-    if(!writeChar){ log("err","not connected"); return; }
-    try{
-      if(writeChar.properties.writeWithoutResponse) await writeChar.writeValueWithoutResponse(frame);
-      else await writeChar.writeValue(frame);
-    }catch(e){
-      try{ await writeChar.writeValue(frame); }
-      catch(e2){ log("err","write failed",e2.message||String(e2)); }
+function keyExpansion(key) {
+  const Nk = 4, Nr = 10;
+  const w = [];
+  for (let i = 0; i < Nk; i++) w.push(key.slice(i * 4, i * 4 + 4));
+  for (let i = Nk; i < 4 * (Nr + 1); i++) {
+    let temp = w[i - 1];
+    if (i % Nk === 0) {
+      const rot = new Uint8Array([temp[1], temp[2], temp[3], temp[0]]);
+      const sub = new Uint8Array([SBOX[rot[0]], SBOX[rot[1]], SBOX[rot[2]], SBOX[rot[3]]]);
+      temp = new Uint8Array([sub[0] ^ RCON[i / Nk], sub[1], sub[2], sub[3]]);
     }
+    const prev = w[i - Nk];
+    w.push(new Uint8Array([prev[0] ^ temp[0], prev[1] ^ temp[1], prev[2] ^ temp[2], prev[3] ^ temp[3]]));
+  }
+  const roundKeys = [];
+  for (let i = 0; i <= Nr; i++) {
+    const rk = new Uint8Array(16);
+    for (let j = 0; j < 4; j++) rk.set(w[i * 4 + j], j * 4);
+    roundKeys.push(rk);
+  }
+  return roundKeys;
+}
+
+function subBytes(s, box) { return s.map(b => box[b]); }
+function addRoundKey(s, rk) { return s.map((b, i) => b ^ rk[i]); }
+function shiftRows(s) {
+  const out = new Uint8Array(16);
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) out[r + 4 * c] = s[r + 4 * ((c + r) % 4)];
+  return out;
+}
+function invShiftRows(s) {
+  const out = new Uint8Array(16);
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) out[r + 4 * c] = s[r + 4 * ((c - r + 4) % 4)];
+  return out;
+}
+function mixColumns(s) {
+  const out = new Uint8Array(16);
+  for (let c = 0; c < 4; c++) {
+    const a0 = s[4*c], a1 = s[4*c+1], a2 = s[4*c+2], a3 = s[4*c+3];
+    out[4*c]   = gmul(a0,2) ^ gmul(a1,3) ^ a2 ^ a3;
+    out[4*c+1] = a0 ^ gmul(a1,2) ^ gmul(a2,3) ^ a3;
+    out[4*c+2] = a0 ^ a1 ^ gmul(a2,2) ^ gmul(a3,3);
+    out[4*c+3] = gmul(a0,3) ^ a1 ^ a2 ^ gmul(a3,2);
+  }
+  return out;
+}
+function invMixColumns(s) {
+  const out = new Uint8Array(16);
+  for (let c = 0; c < 4; c++) {
+    const a0 = s[4*c], a1 = s[4*c+1], a2 = s[4*c+2], a3 = s[4*c+3];
+    out[4*c]   = gmul(a0,14) ^ gmul(a1,11) ^ gmul(a2,13) ^ gmul(a3,9);
+    out[4*c+1] = gmul(a0,9) ^ gmul(a1,14) ^ gmul(a2,11) ^ gmul(a3,13);
+    out[4*c+2] = gmul(a0,13) ^ gmul(a1,9) ^ gmul(a2,14) ^ gmul(a3,11);
+    out[4*c+3] = gmul(a0,11) ^ gmul(a1,13) ^ gmul(a2,9) ^ gmul(a3,14);
+  }
+  return out;
+}
+
+function aesEncryptBlock(block, key) {
+  const rks = keyExpansion(key);
+  let s = addRoundKey(block, rks[0]);
+  for (let round = 1; round < 10; round++) {
+    s = subBytes(s, SBOX);
+    s = shiftRows(s);
+    s = mixColumns(s);
+    s = addRoundKey(s, rks[round]);
+  }
+  s = subBytes(s, SBOX);
+  s = shiftRows(s);
+  s = addRoundKey(s, rks[10]);
+  return s;
+}
+function aesDecryptBlock(block, key) {
+  const rks = keyExpansion(key);
+  let s = addRoundKey(block, rks[10]);
+  for (let round = 9; round >= 1; round--) {
+    s = invShiftRows(s);
+    s = subBytes(s, INV_SBOX);
+    s = addRoundKey(s, rks[round]);
+    s = invMixColumns(s);
+  }
+  s = invShiftRows(s);
+  s = subBytes(s, INV_SBOX);
+  s = addRoundKey(s, rks[0]);
+  return s;
+}
+
+function selftestAes() {
+  const key = hexToBytes("000102030405060708090a0b0c0d0e0f");
+  const pt  = hexToBytes("00112233445566778899aabbccddeeff");
+  const ct  = hexToBytes("69c4e0d86a7b0430d8cdb78070b4c55a");
+  const enc = aesEncryptBlock(pt, key);
+  const dec = aesDecryptBlock(ct, key);
+  return bytesToHex(enc) === bytesToHex(ct) && bytesToHex(dec) === bytesToHex(pt);
+}
+
+// ────────────────────────────── CRC16/XMODEM ───────────────────────────────
+function crc16Xmodem(data) {
+  let crc = 0;
+  for (const b of data) {
+    crc ^= (b << 8);
+    for (let i = 0; i < 8; i++) {
+      crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+    }
+  }
+  return crc;
+}
+
+// ────────────────────────────── Frame helpers ──────────────────────────────
+function buildBlePacket(cmd, payload) {
+  const pkt = new Uint8Array(5 + payload.length + 3);
+  pkt[0] = 0x55; pkt[1] = 0xAA; pkt[2] = 0x00; pkt[3] = cmd; pkt[4] = payload.length;
+  pkt.set(payload, 5);
+  let sum = 0;
+  for (let i = 0; i < 5 + payload.length; i++) sum += pkt[i];
+  pkt[5 + payload.length] = sum & 0xFF;
+  pkt[5 + payload.length + 1] = 0xFE;
+  pkt[5 + payload.length + 2] = 0xFD;
+  return pkt;
+}
+
+function parseFrame(raw) {
+  if (raw.length >= 4 && raw[0] === 0x55 && raw[1] === 0xAA) {
+    const cmd = raw[3];
+    let length, payload;
+    if (raw.length === 7) { length = 0; payload = new Uint8Array(0); }
+    else if (raw.length >= 8 && 5 + raw[4] + 3 === raw.length) { length = raw[4]; payload = raw.slice(5, 5 + length); }
+    else { length = raw.length > 5 ? raw[4] : 0; payload = raw.length > 5 ? raw.slice(5, 5 + length) : new Uint8Array(0); }
+    return { type: "navee", cmd, length, payload, raw };
+  }
+  return { type: "other", raw };
+}
+
+// Exported for the Node-based offline self-check (see navee_web_flash_test.mjs).
+// Harmless no-op in the browser.
+if (typeof module !== "undefined") {
+  module.exports = { hexToBytes, bytesToHex, aesEncryptBlock, aesDecryptBlock, selftestAes, crc16Xmodem, buildBlePacket, parseFrame, AES_KEYS };
+}
+
+// ───────────────────────────────── UI/log ──────────────────────────────────
+const logEl = document.getElementById("log");
+function log(msg) {
+  logEl.textContent += msg + "\n";
+  logEl.scrollTop = logEl.scrollHeight;
+  console.log(msg);
+}
+
+// ─────────────────────────── BLE central (Web BT) ──────────────────────────
+let device = null, server = null, charWrite = null, charNotify = null;
+const notifyQueue = [];
+let notifyResolve = null;
+
+function onNotify(event) {
+  const value = new Uint8Array(event.target.value.buffer);
+  notifyQueue.push(value);
+  log("[<] notify " + bytesToHex(value));
+  if (notifyResolve) { const r = notifyResolve; notifyResolve = null; r(); }
+}
+
+function waitForNotify(timeoutMs = 5000) {
+  return new Promise(resolve => {
+    if (notifyQueue.length > 0) { resolve(notifyQueue.shift()); return; }
+    const timer = setTimeout(() => { notifyResolve = null; resolve(null); }, timeoutMs);
+    notifyResolve = () => { clearTimeout(timer); resolve(notifyQueue.shift()); };
   });
-  return writeChain;
-}
-function sendCmd(cmd,data,label){
-  const f=buildFrame(cmd,data);
-  log("tx","TX "+(label||("cmd 0x"+cmd.toString(16))),toHexSp(f));
-  return writeFrame(f);
 }
 
-// ---------- notify / decode ----------
-function onNotify(ev){
-  const dv=ev.target.value;
-  const bytes=[]; for(let i=0;i<dv.byteLength;i++) bytes.push(dv.getUint8(i));
-  // text DFU / non-55AA frames: show as-is
-  const printable = bytes.length && bytes.every(b=>(b>=32&&b<127)||b===13||b===10);
-  if(printable && !(bytes[0]===0x55&&bytes[1]===0xAA)){
-    log("rx","RX text",'"'+String.fromCharCode(...bytes).replace(/\r/g,"\\r").replace(/\n/g,"\\n")+'"');
-    return;
+async function connect() {
+  if (!navigator.bluetooth) {
+    throw new Error("navigator.bluetooth unavailable — needs Bluefy (iOS) or a Chromium browser, over HTTPS.");
   }
-  rxBuf.push(...bytes);
-  let guard=0;
-  while(guard++<64){
-    const start=findStart(rxBuf); if(start<0){ rxBuf=[]; break; }
-    if(start>0) rxBuf=rxBuf.slice(start);
-    const end=findEnd(rxBuf); if(end<0) break; // wait for more
-    const frame=rxBuf.slice(0,end+2);
-    rxBuf=rxBuf.slice(end+2);
-    handleFrame(frame);
-  }
-}
-function findStart(a){ for(let i=0;i<a.length-1;i++) if(a[i]===0x55&&a[i+1]===0xAA) return i; return -1; }
-function findEnd(a){ for(let i=2;i<a.length-1;i++) if(a[i]===0xFE&&a[i+1]===0xFD) return i; return -1; }
+  const nameHint = document.getElementById("nameHint").value.trim();
+  const options = { optionalServices: [SERVICE_UUID] };
+  if (nameHint) options.filters = [{ namePrefix: nameHint }];
+  else options.acceptAllDevices = true;
 
-function handleFrame(bytes){
-  const f=parseFrame(bytes);
-  if(!f){ log("rx","RX raw",toHexSp(bytes)); return; }
-  const dec=decode(f);
-  log("rx","RX 0x"+f.cmd.toString(16).padStart(2,"0")+(dec.name?" "+dec.name:""),
-      (dec.text?dec.text+"  ":"")+"["+toHexSp(f.data)+"]");
-  // auth: scooter's 0x30 challenge → answer with 0x31
-  if(f.cmd===0x30 && authPending){
-    const d=f.data;
-    if(d.length>=16){
-      const challenge=d.slice(d.length-16);
-      const key=KEYS[authPending.keyIdx];
-      const resp=challenge.map((b,i)=>b^key[i]);
-      authPending=null;
-      const f31=buildFrame(0x31,resp);
-      log("tx","TX 0x31 auth response",toHexSp(f31));
-      writeFrame(f31).then(()=>{ setAuth(true); log("ok","auth handshake complete — try a Status read"); });
-    }else{
-      log("err","0x30 response too short for challenge",toHexSp(d));
+  device = await navigator.bluetooth.requestDevice(options);
+  log("[*] selected device: " + device.name);
+  device.addEventListener("gattserverdisconnected", () => log("[-] disconnected"));
+
+  server = await device.gatt.connect();
+  log("[+] GATT connected");
+
+  const service = await server.getPrimaryService(SERVICE_UUID);
+  const chars = await service.getCharacteristics();
+  charWrite = null; charNotify = null;
+  for (const c of chars) {
+    const p = c.properties;
+    const flags = [];
+    if (p.write) flags.push("WRITE");
+    if (p.writeWithoutResponse) flags.push("WRITE_NR");
+    if (p.notify) flags.push("NOTIFY");
+    if (p.indicate) flags.push("INDICATE");
+    log("    char " + c.uuid + " [" + flags.join(",") + "]");
+    if ((p.write || p.writeWithoutResponse) && !charWrite) {
+      charWrite = c;
+      log("    -> using as WRITE characteristic");
+    }
+    if ((p.notify || p.indicate) && !charNotify) {
+      charNotify = c;
+      await c.startNotifications();
+      c.addEventListener("characteristicvaluechanged", onNotify);
+      log("    -> using as NOTIFY characteristic (subscribed)");
     }
   }
+  if (!charWrite || !charNotify) throw new Error("Missing write/notify characteristic on this service.");
 }
 
-function ascii(a){ let s=""; for(const b of a){ if(b===0) break; s+= (b>=32&&b<127)?String.fromCharCode(b):"."; } return s; }
-function decode(f){
-  const d=f.data;
-  switch(f.cmd){
-    case 0x74: return {name:"SERIAL", text:"serial="+ascii(d.slice(1))};
-    case 0x73: return {name:"FIRMWARE", text:"ver~"+ascii(d.slice(1))};
-    case 0x72: return {name:"BATTERY"};
-    case 0x70: return d.length>13?{name:"STATUS",
-      text:`mode=${d[2]===5?"SPORT":d[2]===3?"ECO":d[2]} lock=${d[3]} cruise=${d[4]} tail=${d[5]} ers=${d[6]} autoHL=${d[9]} tcs=${d[12]} turnSnd=${d[13]}`+(d.length>26?` maxSpd=${d[26]}`:"")}
-      :{name:"STATUS"};
-    case 0x90: return d.length>7?{name:"TELEM-HOME",
-      text:`batt=${d[3]}% range=${d[7]}km`+(d.length>12?` v=${(d[9]|d[10]<<8|d[11]<<16|d[12]<<24)}mV`:"")}
-      :{name:"TELEM-HOME"};
-    case 0x92: return d.length>4?{name:"TELEM-DRIVE", text:`batt=${d[1]}% speed=${((d[3]|d[4]<<8)/10).toFixed(1)}km/h`}:{name:"TELEM-DRIVE"};
-    case 0x30: return {name:"AUTH-challenge"};
-    case 0x31: return {name:"AUTH-key"};
-    default: return {name:""};
+async function send(data, withResponse = true) {
+  log("[>] " + bytesToHex(data));
+  if (!withResponse && charWrite.properties.writeWithoutResponse) {
+    await charWrite.writeValueWithoutResponse(data);
+  } else if (charWrite.properties.write && charWrite.writeValueWithResponse) {
+    await charWrite.writeValueWithResponse(data);
+  } else {
+    await charWrite.writeValue(data);
   }
 }
 
-// ---------- wire up buttons ----------
-document.getElementById("btnConnect").onclick=()=>connect(false);
-document.getElementById("btnConnectAll").onclick=()=>connect(true);
-document.getElementById("btnDisc").onclick=disconnect;
-document.getElementById("btnClear").onclick=()=>logEl.innerHTML="";
-document.getElementById("btnCopy").onclick=async()=>{
-  try{ await navigator.clipboard.writeText(logEl.innerText); log("info","log copied"); }
-  catch(e){ log("err","copy failed",e.message||""); }
-};
+// ─────────────────────────────── Protocol flow ─────────────────────────────
+async function doAuth(keyIndex) {
+  const reqPayload = new Uint8Array([keyIndex, 0x00, 0x88, 0, 0, 0, 0, 0, 0]);
+  notifyQueue.length = 0;
+  await send(buildBlePacket(0x30, reqPayload), true);
 
-document.getElementById("btnAuth").onclick=()=>{
-  const keyIdx=parseInt(document.getElementById("keyIdx").value,10);
-  let id=hexToBytes(document.getElementById("devid").value);
-  while(id.length<6) id.push(0); id=id.slice(0,6);
-  authPending={keyIdx};
-  const req=buildFrame(0x30,[keyIdx,0x00,...id,0x00]);
-  setAuth(false);
-  log("tx",`TX 0x30 auth request (key ${keyIdx})`,toHexSp(req));
-  writeFrame(req);
-  setTimeout(()=>{ if(authPending){ log("err","no 0x30 challenge received — try another key index / press Authenticate again"); authPending=null; } },2500);
-};
+  const resp = await waitForNotify(5000);
+  if (!resp) { log("[-] no 0x30 response"); return false; }
+  const frame = parseFrame(resp);
+  if (frame.type !== "navee" || frame.cmd !== 0x30) { log("[-] unexpected 0x30 reply"); return false; }
+  const payload = frame.payload;
+  if (payload.length < 18 || payload[0] !== 0 || payload[1] !== 0) { log("[-] unexpected 0x30 payload shape: " + bytesToHex(payload)); return false; }
+  const challenge = payload.slice(2, 18);
+  log("[<] challenge " + bytesToHex(challenge));
 
-document.querySelectorAll("button[data-cmd]").forEach(b=>{
-  b.onclick=()=>{
-    const cmd=parseInt(b.dataset.cmd,16);
-    const data=b.dataset.data?hexToBytes(b.dataset.data):[];
-    sendCmd(cmd,data,b.textContent.trim());
-  };
+  const key = AES_KEYS[keyIndex];
+  const response = challenge.map((b, i) => b ^ key[i]);
+  notifyQueue.length = 0;
+  await send(buildBlePacket(0x31, response), true);
+
+  const resp2 = await waitForNotify(5000);
+  if (!resp2) { log("[-] no 0x31 ack"); return false; }
+  const frame2 = parseFrame(resp2);
+  const ok = frame2.type === "navee" && frame2.cmd === 0x31;
+  log("[<] 0x31 ack " + bytesToHex(resp2) + " -> " + (ok ? "AUTH OK" : "unexpected"));
+  return ok;
+}
+
+async function query(cmd, payload = new Uint8Array(0)) {
+  notifyQueue.length = 0;
+  await send(buildBlePacket(cmd, payload), true);
+  const resp = await waitForNotify(5000);
+  if (!resp) { log("[-] cmd 0x" + cmd.toString(16) + ": no response"); return null; }
+  log("[<] cmd 0x" + cmd.toString(16) + " resp " + bytesToHex(resp));
+  return parseFrame(resp);
+}
+
+async function doReconReads() {
+  await query(0x73); // firmware versions
+  await query(0x74); // serial
+  await query(0x70); // status
+  await query(0x72); // battery
+}
+
+async function dfuSendText(text, expectPrefix, timeoutMs = 5000, retries = 3) {
+  const expectBytes = strToBytes(expectPrefix);
+  for (let attempt = 0; attempt < retries; attempt++) {
+    notifyQueue.length = 0;
+    await send(strToBytes(text), true);
+    const resp = await waitForNotify(timeoutMs);
+    if (resp && bytesStartWith(resp, expectBytes)) return resp;
+    log("[-] retry " + (attempt + 1) + " for " + JSON.stringify(text) + " got " + (resp ? bytesToHex(resp) : null));
+  }
+  return null;
+}
+
+async function doDfuFlash(targetMcu, fwBytes, keyIndex) {
+  if (fwBytes.length <= 15) { log("[-] SAFETY ABORT: firmware file too small to contain a valid header."); return false; }
+  const hdrType = fwBytes[6];
+  if (hdrType !== targetMcu) {
+    log("[-] SAFETY ABORT: firmware header says type=" + hdrType + " (" + (DFU_MCU_NAMES[hdrType] || "?") +
+        ") but DFU target=" + targetMcu + " (" + (DFU_MCU_NAMES[targetMcu] || "?") + "). Refusing mismatched image.");
+    return false;
+  }
+  const modelStr = new TextDecoder().decode(fwBytes.slice(0, 6));
+  const versionStr = new TextDecoder().decode(fwBytes.slice(7, 15));
+  log("[*] header OK: model=" + modelStr + " type=" + hdrType + " (" + DFU_MCU_NAMES[hdrType] + ") version=" + versionStr);
+
+  const ack = await dfuSendText("down dfu_start " + targetMcu + "\r", "ok");
+  if (!ack) { log("[-] dfu_start failed"); return false; }
+  log("[<] " + bytesToHex(ack));
+
+  const key = AES_KEYS[keyIndex];
+  const resp = await dfuSendText("down ble_rand\r", "ok ");
+  if (!resp) { log("[-] ble_rand failed"); return false; }
+  const cipher = resp.slice(3, 19);
+  if (cipher.length !== 16) { log("[-] unexpected ble_rand cipher length"); return false; }
+  // Scooter signs its random with AES DECRYPT-mode; we invert with ENCRYPT-mode.
+  const plainRandom = aesEncryptBlock(cipher, key);
+  log("[<] cipher=" + bytesToHex(cipher) + " -> plaintext random=" + bytesToHex(plainRandom));
+
+  notifyQueue.length = 0;
+  const keyMsg = concatBytes(strToBytes("down ble_key "), plainRandom, new Uint8Array([0x0d]));
+  await send(keyMsg, true);
+  const resp2 = await waitForNotify(5000);
+  if (!resp2 || !bytesStartWith(resp2, strToBytes("ok"))) { log("[-] ble_key rejected: " + (resp2 ? bytesToHex(resp2) : null)); return false; }
+  log("[<] " + bytesToHex(resp2));
+
+  const ready = await waitForNotify(5000);
+  if (!ready || ready.length !== 1 || ready[0] !== 0x43) { log("[-] expected XMODEM-ready 0x43, got " + (ready ? bytesToHex(ready) : null)); return false; }
+  log("[<] XMODEM-ready (0x43)");
+
+  let seq = 1;
+  const totalBlocks = Math.ceil(fwBytes.length / 128);
+  for (let i = 0; i < totalBlocks; i++) {
+    let chunk = fwBytes.slice(i * 128, (i + 1) * 128);
+    if (chunk.length < 128) {
+      const padded = new Uint8Array(128).fill(0x1A); // standard XMODEM pad; unverified on real HW
+      padded.set(chunk, 0);
+      chunk = padded;
+    }
+    const crc = crc16Xmodem(chunk);
+    const block = concatBytes(
+      new Uint8Array([0x01, seq & 0xFF, (255 - seq) & 0xFF]),
+      chunk,
+      new Uint8Array([(crc >> 8) & 0xFF, crc & 0xFF])
+    );
+
+    let ok = false;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      notifyQueue.length = 0;
+      await send(block, false);
+      const ackB = await waitForNotify(3000);
+      if (ackB && ackB.length === 1 && ackB[0] === 0x06) { ok = true; break; }
+      log("[-] block " + seq + " attempt " + (attempt + 1) + ": ack=" + (ackB ? bytesToHex(ackB) : null) + ", retrying");
+    }
+    if (!ok) { log("[-] block " + seq + " failed after retries, aborting"); return false; }
+    if (seq % 20 === 0 || i === totalBlocks - 1) log("[.] sent block " + seq + "/" + totalBlocks);
+    seq = (seq + 1) & 0xFF;
+  }
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    notifyQueue.length = 0;
+    await send(new Uint8Array([0x04]), false);
+    const ackB = await waitForNotify(3000);
+    if (ackB && ackB[0] === 0x06) break;
+  }
+  const final = await waitForNotify(5000);
+  log("[<] final: " + (final ? bytesToHex(final) : null));
+  if (final && bytesStartWith(final, strToBytes("rsq dfu_ok"))) { log("[+] DFU COMPLETE — scooter reports dfu_ok"); return true; }
+  log("[-] DFU did not confirm success — do NOT power-cycle the scooter until you're sure of its state.");
+  return false;
+}
+
+// ────────────────────────────────── Wiring ─────────────────────────────────
+document.getElementById("connectBtn").addEventListener("click", async () => {
+  document.getElementById("connStatus").textContent = "connecting...";
+  try {
+    await connect();
+    document.getElementById("connStatus").textContent = "connected: " + device.name;
+    document.getElementById("runBtn").disabled = false;
+  } catch (e) {
+    log("[-] connect error: " + e);
+    document.getElementById("connStatus").textContent = "connect failed";
+  }
 });
-document.getElementById("btnMax").onclick=()=>{
-  const k=Math.max(1,Math.min(255,parseInt(document.getElementById("maxkmh").value||"0",10)));
-  sendCmd(0x6e,[0x01,k],"Max speed "+k+"km/h");
-};
-document.getElementById("btnLimOn").onclick=()=>{
-  const k=Math.max(1,Math.min(127,parseInt(document.getElementById("limkmh").value||"0",10)));
-  sendCmd(0x6b,[0x80|(k&0x7f)],"Speed limit ON "+k+"km/h");
-};
-document.getElementById("btnLimOff").onclick=()=>sendCmd(0x6b,[0x00],"Speed limit OFF");
-document.getElementById("btnCustom").onclick=()=>{
-  const cmd=hexToBytes(document.getElementById("ccmd").value)[0];
-  if(cmd==null){ log("err","enter a cmd byte"); return; }
-  const data=hexToBytes(document.getElementById("cdata").value);
-  sendCmd(cmd,data,"custom");
-};
 
-setConnected(false);
-log("info","ready. Tap Connect and choose your scooter.");
-if(!navigator.bluetooth) log("err","This browser has no Web Bluetooth.","Use Bluefy on iOS, or Chrome on Android/desktop.");
+document.getElementById("runBtn").addEventListener("click", async () => {
+  const stage = document.getElementById("stage").value;
+  const keyIndex = parseInt(document.getElementById("keyIndex").value, 10);
+  const dfuTarget = parseInt(document.getElementById("dfuTarget").value, 10);
+
+  const ok = await doAuth(keyIndex);
+  if (!ok) { log("[-] stopping: auth failed"); return; }
+  log("[+] AUTH OK — running read-only recon queries...");
+  await doReconReads();
+
+  if (stage === "flash") {
+    const fileInput = document.getElementById("fwFile");
+    if (!fileInput.files.length) { log("[-] pick a firmware file first"); return; }
+    const file = fileInput.files[0];
+    const buf = await file.arrayBuffer();
+    const fwBytes = new Uint8Array(buf);
+    const proceed = confirm(
+      "About to WRITE to real flash.\n" +
+      "Target MCU=" + dfuTarget + " (" + DFU_MCU_NAMES[dfuTarget] + ")\n" +
+      "File=" + file.name + " (" + fwBytes.length + " bytes)\n\nProceed?"
+    );
+    if (!proceed) { log("Aborted."); return; }
+    await doDfuFlash(dfuTarget, fwBytes, keyIndex);
+  }
+});
+
+window.addEventListener("load", () => {
+  log(selftestAes() ? "[selftest] AES-128 known-answer test: PASS" : "[selftest] AES-128 known-answer test: FAIL !!!");
+  if (!navigator.bluetooth) log("[-] navigator.bluetooth not found — open this page in Bluefy (iOS) or a Chromium browser, over HTTPS.");
+});
 </script>
 </body>
 </html>
